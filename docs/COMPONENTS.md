@@ -135,3 +135,16 @@ arbitrary third-party widgets, shadow trees, virtualized datasets or iframes.
 
 For explicit save results, return `confirmed(...)` from the existing UI handler.
 See the [README example](../README.md#add-controls) and [stream contract](STREAMS.md).
+
+## Readout
+
+`Readout` renders an ordinary div and registers role `readout`, an empty action
+set, optional primitive `value` and bounded primitive `detail`. Props/refs and
+children are forwarded; with no children it displays the string value, including
+zero/false. `cli.label` and `cli.description` describe the information; `cli.id`
+selects a stable path under the current scope. Value exposure defaults on for
+readouts. `cli.sensitive` excludes the complete descriptor; explicitly supplied
+public detail is not a secret-field escape hatch. Only register information
+already shown to the current user. Hidden/inactive/underlying-dialog content is
+excluded by the same adapter/runtime as buttons. No click/type handler exists.
+Custom `useTerminalControl` registrations may now supply the same public `detail`.

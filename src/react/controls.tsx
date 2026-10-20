@@ -8,6 +8,7 @@ import {
 } from "react";
 import type {
   ButtonHTMLAttributes,
+  HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
   Ref,
@@ -79,6 +80,7 @@ type Registration = {
   disabled?: boolean;
   secret?: boolean;
   value?: Control["value"];
+  detail?: Control["detail"];
   path?: string[];
   layer?: string;
   active?: boolean;
@@ -102,8 +104,9 @@ export function useTerminalControl(options: Registration) {
     shared: context.shared,
     disabled: !!options.disabled,
     secret: options.secret || options.cli?.sensitive,
-    exposeValue: options.cli?.exposeValue,
+    exposeValue: options.cli?.exposeValue ?? options.role === "readout",
     value: options.value,
+    detail: options.detail,
     actions: options.actions,
     measure: async () => {
       const rect = options.ref.current?.getBoundingClientRect();
@@ -335,6 +338,22 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
     />
   );
 });
+/** A visible informational widget. Inspection is its only terminal operation. */
+export type ReadoutProps = HTMLAttributes<HTMLDivElement> & {
+  cli?: CliMetadata;
+  value?: Control["value"];
+  detail?: Control["detail"];
+};
+export const Readout = forwardRef<HTMLDivElement, ReadoutProps>(function Readout(
+  {cli, value, detail, children, ...props}, forwarded,
+) {
+  const ref = useRef<HTMLDivElement>(null);
+  useTerminalControl({ref, cli: cli ? {...cli, exposeValue: cli.exposeValue ?? true} : undefined,
+    label: props["aria-label"] ?? cli?.label ?? "Information", role: "readout", value, detail, actions: {}});
+  return <div {...props} data-cli-id={cli?.id} data-cli-description={cli?.description}
+    ref={node=>{ref.current=node;assign(forwarded,node);}}>{children ?? (value === undefined ? null : String(value))}</div>;
+});
+
 export function TerminalScope({
   id,
   kind = "group",

@@ -28,8 +28,11 @@ function EventView({ event }: { event: TerminalEvent }) {
               {control.disabled ? " [disabled]" : ""}
             </span>
             <span className="uit-control-actions">
-              {control.actions.join(" · ")}
+              {control.actions.join(" · ") || "read only"}
             </span>
+            {(control.value !== undefined || control.detail) && <span className="uit-control-description uit-readout-value">
+              {control.value !== undefined ? String(control.value) : ""}{control.detail ? ` · ${JSON.stringify(control.detail)}` : ""}
+            </span>}
             {control.description && (
               <span className="uit-control-description">
                 {control.description}
@@ -65,8 +68,8 @@ function EventView({ event }: { event: TerminalEvent }) {
           Changes · revision {delta.fromRevision} → {delta.toRevision}
         </div>
         {[
-          ...delta.added.map((row) => `+ ${row.path} · ${row.label}`),
-          ...delta.changed.map((row) => `~ ${row.path} · ${row.label}`),
+          ...delta.added.map((row) => `+ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`),
+          ...delta.changed.map((row) => `~ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`),
           ...delta.removed.map((row) => `− ${row.path}`),
         ].map((line) => (
           <div key={line} className="uit-delta">

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { confirmed } from "../src/core/index.js";
 import {
   Button,
+  Readout,
   Dialog,
   Field,
   TerminalProvider,
@@ -414,12 +415,12 @@ function Playground({
                     <span>Subtotal</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
-                  <div className="total">
+                  <Readout className="total" cli={{id:"total",label:"Total",description:"Current displayed collection total"}} value={`$${total.toFixed(2)}`} detail={{amount:total,currency:"USD",state:"ready"}}>
                     <span>Total</span>
                     <strong data-testid="cart-total">
                       ${total.toFixed(2)}
                     </strong>
-                  </div>
+                  </Readout>
                   <Button
                     className="save-button"
                     cli={{

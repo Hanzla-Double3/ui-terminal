@@ -92,13 +92,14 @@ try {
     import assert from 'node:assert/strict';
     import React from 'react';
     import {renderToString} from 'react-dom/server';
-    import {TerminalProvider,Button,Field} from 'ui-terminal-local/react';
+    import {TerminalProvider,Button,Field,Readout} from 'ui-terminal-local/react';
     import {TerminalPanel} from 'ui-terminal-local/panel';
     const html=renderToString(React.createElement(TerminalProvider,{enabled:true},
       React.createElement(Button,{cli:{id:'save'}},'Save'),
       React.createElement(Field,{cli:{id:'name'},readOnly:true,value:'Example'}),
+      React.createElement(Readout,{cli:{id:'total',label:'Total'},value:'USD 12.00'}),
       React.createElement(TerminalPanel)));
-    assert(html.includes('Save')); assert(html.includes('Example'));
+    assert(html.includes('Save')); assert(html.includes('Example')); assert(html.includes('USD 12.00'));
     assert(import.meta.resolve('ui-terminal-local/panel.css').endsWith('/src/panel/panel.css'));
     console.log('React/panel installed package: imports, server render and CSS export passed.');
   `,
@@ -109,7 +110,7 @@ try {
         path.join(consumer, "node_modules/ui-terminal-local/package.json"),
       ),
     ).version,
-    "0.1.0-dev.1",
+    "0.1.0-dev.2",
   );
   console.log(
     "Independent package acceptance passed. Temporary consumer removed.",

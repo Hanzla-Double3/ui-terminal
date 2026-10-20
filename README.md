@@ -2,11 +2,11 @@
 
 **A terminal for your React application's visible interface.**
 
-A standalone terminal for your application's visible controls. Components describe
+A standalone terminal for your application's visible controls and information. Components describe
 themselves; people discover them with `ls` and operate them through the same
 handlers as the normal interface.
 
-This is an independent **local browser prototype**, version `0.1.0-dev.1`, under a
+This is an independent **local browser prototype**, version `0.1.0-dev.2`, under a
 temporary npm package name. This is a private development repository; the package
 is not published to npm. Its public package name and licence remain undecided.
 The library has no FayPOS runtime dependency.
@@ -15,13 +15,13 @@ The library has no FayPOS runtime dependency.
 
 ## What works today
 
-- Declarative React buttons and fields, with optional stable IDs and descriptions.
+- Declarative React buttons, fields and read-only information widgets, with optional stable IDs and descriptions.
 - One command processor, one active input/output attachment and a visible cursor.
 - Screen/dialog-scoped `ls`, shared navigation and revision-based change output.
 - Normal UI handlers, disabled-state checks, secret-field exclusion and target
   revalidation before activation.
 - A bottom-docked terminal with resizing, completion and failed-command history.
-- An independent demo, 31 engine tests, 11 browser flows and clean-package checks.
+- An independent demo, 32 engine tests, 12 browser flows and clean-package checks.
 
 Browser/React DOM is the implemented platform. A registration-only adapter export supports host-owned native controls/panels;
 the bundled React components and panel remain DOM-only. An external
@@ -261,3 +261,29 @@ when the UUID callback is supplied. `allowNumericIndices` is an opt-in legacy
 bridge: `[0]` parses as key `"0"`; new adapters should use stable quoted IDs.
 The package's React DOM panel does not become a native panel through this export.
 FayPOS owns its RN control/panel integration and platform acceptance checks.
+
+## Read visible information
+
+Use `Readout` for metrics, totals, status messages or other information already
+rendered by your application. It registers no actions. Example:
+
+```tsx
+import {Readout, TerminalScope} from "ui-terminal-local/react";
+
+<TerminalScope id="analytics">
+  <Readout cli={{id:"total_sales", label:"Total Sales"}}
+    value="$12.00" detail={{amount_minor:1200, currency:"USD", period:"2026-10-21", state:"ready"}}>
+    <span>Total Sales</span><strong>$12.00</strong>
+  </Readout>
+</TerminalScope>
+```
+
+`ls analytics`, `analytics.total_sales` and `ls --changes` expose the same displayed
+value and bounded primitive context. Both structured stream events and the panel
+show values; delta output includes updated values. `analytics.total_sales.click()`
+is rejected. Readouts inherit screen, dialog, visibility and session boundaries.
+Mark sensitive widgets `cli={{id:"private", sensitive:true}}`; they are excluded.
+An optional `exposeValue:false` hides the value, but public `detail` must never
+contain credentials or private form drafts. There is no automatic document scrape,
+new data fetch or independent agent API. Loading/error states must be represented
+by the host, rather than reporting a successful zero before data arrives.

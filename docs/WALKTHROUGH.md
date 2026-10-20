@@ -51,3 +51,11 @@ The default parser still rejects numeric indices. Core regressions cover injecte
 native UUIDs, operation without TextEncoder/Web Crypto, legacy opt-in parsing,
 bounded detail snapshots and scope/disabled/unmount changes during async checks.
 The demo and screenshots remain browser evidence, not Android device acceptance.
+
+Readout review (dev.2): after step 4, run `ls cart.total` and read `$12.00` with
+currency/state metadata and no actions. Run `ls cart.total`, increase a line using
+the normal button, then `ls --changes`; the new total must appear.
+`cart.total.click()` must fail with UNKNOWN_ACTION and leave the collection alone.
+These inspection steps never save or mutate data. Existing interaction, secret,
+dialog and durable-save conditions are unchanged. The panel renders values and
+primitive details from the same structured events an eventual agent would receive.

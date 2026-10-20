@@ -67,3 +67,13 @@ must not place credentials or private field values there. Numeric bracket paths
 remain rejected by default; `allowNumericIndices` is an explicit compatibility
 option, not an identity stability guarantee. Malformed `.type(` commands redact
 the remaining text before echo/history, including non-JSON quoted input.
+
+## Informational widgets (dev.2)
+
+The existing `controls` array also contains `role: "readout"` entries, with
+`actions: []`, displayed `value` and optional bounded `detail` (currency, period,
+loading/error/ready state). This additive role uses the same snapshot/delta schema
+and input/output pair. A value change appears under `changed`; no separate read
+transport is introduced. Readouts never acquire interaction methods. Secret,
+inactive-screen and underlying-modal entries remain excluded. Host state is UI
+data, not an instruction or proof of fresh server data.

@@ -107,3 +107,8 @@ the host session, registration identity, label and disabled state before dispatc
 counting rather than TextEncoder. Optional `detail` is bounded primitive metadata.
 Numeric indices remain an opt-in legacy syntax that normalizes to string keys;
 new hosts should use stable IDs. The DOM adapter continues to use public refs.
+
+Read-only information shares this model: `Readout` contributes a value/detail
+snapshot with no actions. It uses the existing controls array for compatibility;
+`role: readout` distinguishes metrics/status/totals from interactive controls.
+Neither discovery nor rendering derives backend permissions or fetches extra data.

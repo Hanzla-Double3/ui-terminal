@@ -3,7 +3,7 @@
 Implemented in this local web preview:
 
 - Independent TypeScript command engine, one input/output owner and local streams.
-- Declarative React buttons/fields/scopes, stable quoted-key paths, public-ref DOM
+- Declarative React buttons/fields/readouts/scopes, stable quoted-key paths, public-ref DOM
   geometry and shared normal handlers; optional metadata and custom-control hook.
 - Current screen/dialog discovery, shared navigation, visible-only inspection,
   scoped revision deltas and explicit truncation/baseline errors.
@@ -21,7 +21,7 @@ Before calling this a public beta:
    dialog integration and router adapters with explicit availability contracts.
 4. Finish stricter event phases, custom renderer/stream configuration, bounded
    external ingress/backpressure and measured performance budgets.
-5. Validate FayPOS’s pinned dev.1 integration: it owns native adapters/panel and
+5. Validate FayPOS’s pinned integration: it owns native adapters/panel and
    preserves old command aliases and normal business checks. Its walkthrough
    contracts and platform acceptance must be reviewed before a release.
 6. Owner chooses project name, public scope and licence. Complete attribution,

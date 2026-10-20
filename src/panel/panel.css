@@ -330,3 +330,5 @@
     transition: none;
   }
 }
+
+.uit-readout-value { color: #d4e8d8; overflow-wrap: anywhere; white-space: pre-wrap; }

@@ -1,13 +1,13 @@
 # Local verification — 20 October 2026
 
-Version: `ui-terminal-local@0.1.0-dev.1`, private local prototype.
+Version: `ui-terminal-local@0.1.0-dev.2`, private local prototype.
 
 ## Automated evidence
 
 | Check                                                       | Result                                 |
 | ----------------------------------------------------------- | -------------------------------------- |
-| Sequential engine tests (`npm test`)                        | 31 passed, 0 failed                    |
-| Browser regressions (`npm run test:browser`)                | 11 passed, 1 worker, isolated Chromium |
+| Sequential engine tests (`npm test`)                        | 32 passed, 0 failed                    |
+| Browser regressions (`npm run test:browser`)                | 12 passed, 1 worker, isolated Chromium |
 | TypeScript library/demo checks (`npm run build`)            | Passed                                 |
 | Production demo bundle                                      | Built successfully                     |
 | Independent installed-package test (`npm run test:package`) | Passed                                 |
@@ -57,3 +57,9 @@ Completion update: Tab now fills a shared group prefix before listing alternativ
 before limiting displayed suggestions, and ignores dots inside quoted IDs.
 
 Adapter update: 31 core tests and 11 browser flows pass, including native UUID injection, async actionability, legacy numeric paths (opt-in only), bounded detail metadata, stale native checks and malformed private input redaction. Clean installed-package checks import the adapter and completion exports without React.
+
+Readout update: a real browser flow inspects the rendered collection total,
+changes it through the ordinary button, sees the updated value via scoped delta,
+and confirms a click on the readout is rejected without changing the collection.
+The installed React package renders the new Readout export; stream schema remains
+0.1 with additive role/read-only values in the existing controls array.

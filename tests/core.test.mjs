@@ -647,3 +647,15 @@ test("malformed type input never echoes private single-quoted text", async () =>
   assert.doesNotMatch(JSON.stringify(h.events), /do-not-log/);
   assert.equal(h.runtime.getState().history[0].replayable, false);
 });
+
+test("read-only widgets expose displayed values and scoped deltas without gaining actions", async () => {
+  const h=fixture(),metric=h.add('reports.total',{role:'readout',label:'Total sales',actions:{},value:'USD 12.00',exposeValue:true,detail:{amount_minor:1200,currency:'USD',state:'ready',period:'2026-10-21'}});
+  h.add('reports.secret',{role:'readout',actions:{},value:'private-value',exposeValue:true,secret:true});
+  await h.input.send('ls reports');
+  const snapshot=h.last('discovery.snapshot').data;
+  assert.equal(snapshot.controls.length,1);assert.equal(snapshot.controls[0].value,'USD 12.00');assert.deepEqual(snapshot.controls[0].actions,[]);
+  metric.descriptor.value='USD 15.00';metric.descriptor.detail.amount_minor=1500;
+  await h.input.send('ls --changes');assert.equal(h.last('discovery.delta').data.changed[0].value,'USD 15.00');
+  await h.input.send('reports.total.click()');assert.equal(h.error(),'UNKNOWN_ACTION');assert.equal(h.calls.length,0);
+  h.host.layer('modal',true);await h.input.send('ls');assert.equal(h.last('discovery.snapshot').data.controls.length,0);
+});
