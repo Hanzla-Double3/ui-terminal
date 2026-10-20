@@ -1,0 +1,69 @@
+{
+  "name": "ui-terminal-local",
+  "version": "0.1.0-dev.0",
+  "private": true,
+  "type": "module",
+  "description": "A local, embeddable terminal for operating visible application controls.",
+  "types": "./dist/core/index.d.ts",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "sideEffects": [
+    "./src/panel/panel.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./panel": {
+      "types": "./dist/panel/index.d.ts",
+      "import": "./dist/panel/index.js"
+    },
+    "./panel.css": "./src/panel/panel.css"
+  },
+  "files": [
+    "dist",
+    "src/panel/panel.css",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 18120 --strictPort",
+    "build": "node scripts/task.mjs build",
+    "build:lib": "node scripts/task.mjs library",
+    "test": "node scripts/task.mjs test",
+    "test:browser": "node scripts/task.mjs browser",
+    "test:package": "node scripts/task.mjs package",
+    "format": "prettier --write src demo tests scripts docs *.json *.ts README.md AGENTS.md",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
+    "preview": "vite preview --host 127.0.0.1 --port 18120 --strictPort"
+  },
+  "peerDependencies": {
+    "react": ">=19.1.0 <20",
+    "react-dom": ">=19.1.0 <20"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "prettier": "3.9.10",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "typescript": "5.9.2",
+    "vite": "8.3.4"
+  }
+}
