@@ -23,12 +23,21 @@ type Attachment = {
 };
 const equal = (a: unknown, b: unknown) =>
   JSON.stringify(a) === JSON.stringify(b);
+// UTF-8 byte budget without browser TextEncoder (also works on native JS runtimes).
+function utf8Length(value: string) {
+  let bytes = 0;
+  for (const char of value) {
+    const code = char.codePointAt(0)!;
+    bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+}
 function safeText(value: string, limit = 400) {
   return value
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "")
     .slice(0, limit);
 }
-/** Internal adapter access is intentionally absent from package exports. */
+/** Registration-only host access; commands still enter through the input stream. */
 const hosts = new WeakMap<
   TerminalRuntime,
   {
@@ -60,6 +69,8 @@ export class TerminalRuntime {
     Pick<RuntimeOptions, "point">;
   constructor(options: RuntimeOptions = {}) {
     this.options = {
+      createSessionId: () => globalThis.crypto.randomUUID(),
+      allowNumericIndices: false,
       enabled: false,
       scope: "local",
       maxControls: 200,
@@ -86,7 +97,7 @@ export class TerminalRuntime {
       enabled: this.options.enabled,
       attached: false,
       busy: false,
-      sessionId: crypto.randomUUID(),
+      sessionId: this.options.createSessionId(),
       history: [],
       error: null,
     };
@@ -137,7 +148,7 @@ export class TerminalRuntime {
     if (this.attachment) this.attachment.baseline = undefined;
     this.update({
       enabled,
-      sessionId: crypto.randomUUID(),
+      sessionId: this.options.createSessionId(),
       history: [],
       error: null,
     });
@@ -208,7 +219,7 @@ export class TerminalRuntime {
     };
     const encoded = JSON.stringify(full);
     const safe =
-      new TextEncoder().encode(encoded).length > this.options.maxOutputBytes
+      utf8Length(encoded) > this.options.maxOutputBytes
         ? {
             ...full,
             type: "output.truncated",
@@ -262,10 +273,12 @@ export class TerminalRuntime {
     if (!command)
       return {
         text: safeText(
-          source.replace(/"(?:[^"\\]|\\.)*"/g, '"<redacted>"'),
+          source
+            .replace(/\.type\([\s\S]*$/, ".type(<redacted>)")
+            .replace(/"(?:[^"\\]|\\.)*"/g, '"<redacted>"'),
           4096,
         ),
-        replayable: !source.includes('"'),
+        replayable: !source.includes('"') && !source.includes(".type("),
       };
     return { text: safeText(source, 4096), replayable: true };
   }
@@ -276,6 +289,18 @@ export class TerminalRuntime {
       label: safeText(control.label),
       ...(control.description
         ? { description: safeText(control.description) }
+        : {}),
+      ...(control.detail
+        ? {
+            detail: Object.fromEntries(
+              Object.entries(control.detail)
+                .slice(0, 32)
+                .map(([key, value]) => [
+                  safeText(key, 80),
+                  typeof value === "string" ? safeText(value, 500) : value,
+                ]),
+            ),
+          }
         : {}),
       actions: Object.keys(control.actions).sort(),
       disabled: control.disabled,
@@ -314,7 +339,7 @@ export class TerminalRuntime {
       const visible = await Promise.all(
         rows.map(async (row) => ({
           row,
-          visible: row.descriptor.actionable(),
+          visible: await row.descriptor.actionable(),
         })),
       );
       rows = visible.filter((item) => item.visible).map((item) => item.row);
@@ -379,7 +404,7 @@ export class TerminalRuntime {
       !rect ||
       rect.width <= 0 ||
       rect.height <= 0 ||
-      !target.descriptor.actionable()
+      !(await target.descriptor.actionable())
     )
       throw new TerminalError(
         "NOT_ACTIONABLE",
@@ -406,13 +431,28 @@ export class TerminalRuntime {
         "The target changed while the cursor moved. Inspect again.",
       );
     validate(fresh[0]!.descriptor);
-    if (!fresh[0]!.descriptor.actionable())
+    if (!(await fresh[0]!.descriptor.actionable()))
       throw new TerminalError(
         "NOT_ACTIONABLE",
         "The control became obscured before activation.",
       );
+    this.alive(attachment, epoch);
+    // Native geometry checks may await a frame: re-resolve after that boundary.
+    const final = this.candidates().filter((row) =>
+      equal(row.descriptor.path, command.path),
+    );
+    if (
+      final.length !== 1 ||
+      final[0]!.id !== target.id ||
+      final[0]!.descriptor.label !== originalLabel
+    )
+      throw new TerminalError(
+        "STALE_TARGET",
+        "The target changed before activation. Inspect again.",
+      );
+    validate(final[0]!.descriptor);
     let timeout: ReturnType<typeof setTimeout> | undefined;
-    const result = fresh[0]!.descriptor.actions[method]!(...command.args);
+    const result = final[0]!.descriptor.actions[method]!(...command.args);
     let outcome: void | ActionOutcome;
     try {
       outcome = await Promise.race([
@@ -463,7 +503,7 @@ export class TerminalRuntime {
     const commandId = `command-${++this.counter}`;
     let command: Command | undefined, parseError: unknown;
     try {
-      command = parse(source);
+      command = parse(source, this.options);
     } catch (error) {
       parseError = error;
     }

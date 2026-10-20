@@ -95,3 +95,15 @@ A listening local server, authentication, controller handoff and remote ingress
 limits are future work. They must not introduce a second feature-specific
 execution API. Native adapters will share the core, with separate geometry and
 interaction implementations and actual platform acceptance tests.
+
+## Host platform adapters
+
+The `/adapter` export exposes control registration, screen/layer reporting and
+pointer presentation only. Discovery/actions still use the single stream. This
+allows a host to retain its native panel/controls without importing DOM code.
+`actionable` may be asynchronous; after geometry resolves the runtime revalidates
+the host session, registration identity, label and disabled state before dispatch.
+`createSessionId` supplies a native UUID source. Byte budgets use portable UTF-8
+counting rather than TextEncoder. Optional `detail` is bounded primitive metadata.
+Numeric indices remain an opt-in legacy syntax that normalizes to string keys;
+new hosts should use stable IDs. The DOM adapter continues to use public refs.

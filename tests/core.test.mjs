@@ -587,3 +587,63 @@ test("invalid memory/time budgets cannot disable bounded-session protections", (
   ])
     assert.throws(() => createTerminal(options), /must be an integer/);
 });
+
+test("platform adapter supports native UUIDs and async geometry without Web Crypto/TextEncoder", async () => {
+  const savedCrypto = globalThis.crypto,
+    savedEncoder = globalThis.TextEncoder;
+  Object.defineProperty(globalThis, "crypto", {
+    value: undefined,
+    configurable: true,
+  });
+  globalThis.TextEncoder = undefined;
+  try {
+    const h = fixture({
+      createSessionId: () => "native-session",
+      allowNumericIndices: true,
+    });
+    h.add('cart.items["0"].remove', {
+      actionable: async () => true,
+      detail: { quantity: 1 },
+    });
+    await h.input.send("ls --visible");
+    assert.equal(
+      h.last("discovery.snapshot").data.controls[0].detail.quantity,
+      1,
+    );
+    await h.input.send("cart.items[0].remove.click()");
+    assert.equal(h.calls.length, 1);
+    assert.equal(h.runtime.getState().sessionId, "native-session");
+    assert.throws(() => parsePath("cart.items[0]"));
+    h.attachment.detach();
+  } finally {
+    Object.defineProperty(globalThis, "crypto", {
+      value: savedCrypto,
+      configurable: true,
+    });
+    globalThis.TextEncoder = savedEncoder;
+  }
+});
+test("async geometry cannot cross a changed host scope or newly disabled target", async () => {
+  for (const change of ["scope", "disabled", "removed"]) {
+    const h = fixture();
+    let checks = 0;
+    const row = h.add("save", {
+      actionable: async () => {
+        if (++checks === 2) {
+          if (change === "scope") h.runtime.configure({ scope: "other" });
+          if (change === "disabled") row.descriptor.disabled = true;
+          if (change === "removed") row.remove();
+        }
+        return true;
+      },
+    });
+    await h.input.send("save.click()");
+    assert.equal(h.calls.length, 0, change);
+  }
+});
+test("malformed type input never echoes private single-quoted text", async () => {
+  const h = fixture();
+  await h.input.send("private.type('do-not-log')");
+  assert.doesNotMatch(JSON.stringify(h.events), /do-not-log/);
+  assert.equal(h.runtime.getState().history[0].replayable, false);
+});

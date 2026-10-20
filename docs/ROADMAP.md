@@ -21,8 +21,9 @@ Before calling this a public beta:
    dialog integration and router adapters with explicit availability contracts.
 4. Finish stricter event phases, custom renderer/stream configuration, bounded
    external ingress/backpressure and measured performance budgets.
-5. Integrate a pinned local package into FayPOS, preserving old command aliases and
-   normal business checks. Update its walkthrough contracts before releasing it.
+5. Validate FayPOS’s pinned dev.1 integration: it owns native adapters/panel and
+   preserves old command aliases and normal business checks. Its walkthrough
+   contracts and platform acceptance must be reviewed before a release.
 6. Owner chooses project name, public scope and licence. Complete attribution,
    contributing/security docs, package review and compatibility tests before publishing.
 

@@ -1,6 +1,6 @@
 {
   "name": "ui-terminal-local",
-  "version": "0.1.0-dev.0",
+  "version": "0.1.0-dev.1",
   "private": true,
   "type": "module",
   "description": "A local, embeddable terminal for operating visible application controls.",
@@ -24,7 +24,15 @@
       "types": "./dist/panel/index.d.ts",
       "import": "./dist/panel/index.js"
     },
-    "./panel.css": "./src/panel/panel.css"
+    "./panel.css": "./src/panel/panel.css",
+    "./adapter": {
+      "types": "./dist/core/adapter.d.ts",
+      "import": "./dist/core/adapter.js"
+    },
+    "./completion": {
+      "types": "./dist/panel/completion.d.ts",
+      "import": "./dist/panel/completion.js"
+    }
   },
   "files": [
     "dist",

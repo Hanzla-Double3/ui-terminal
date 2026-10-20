@@ -6,7 +6,7 @@ A standalone terminal for your application's visible controls. Components descri
 themselves; people discover them with `ls` and operate them through the same
 handlers as the normal interface.
 
-This is an independent **local browser prototype**, version `0.1.0-dev.0`, under a
+This is an independent **local browser prototype**, version `0.1.0-dev.1`, under a
 temporary npm package name. This is a private development repository; the package
 is not published to npm. Its public package name and licence remain undecided.
 The library has no FayPOS runtime dependency.
@@ -21,10 +21,11 @@ The library has no FayPOS runtime dependency.
 - Normal UI handlers, disabled-state checks, secret-field exclusion and target
   revalidation before activation.
 - A bottom-docked terminal with resizing, completion and failed-command history.
-- An independent demo, 28 engine tests, 11 browser flows and clean-package checks.
+- An independent demo, 31 engine tests, 11 browser flows and clean-package checks.
 
-Browser/React DOM is the implemented platform. Native adapters and an external
-local-server attachment are planned; see [current limits](#current-limits).
+Browser/React DOM is the implemented platform. A registration-only adapter export supports host-owned native controls/panels;
+the bundled React components and panel remain DOM-only. An external
+local-server attachment is planned; see [current limits](#current-limits).
 
 ## Run locally
 
@@ -244,3 +245,19 @@ The repository is private and the package has `private: true`. No npm release or
 public open-source licence is granted by this prototype. Choose the final package
 identity and licence before public publication; do not assume a missing licence
 means unrestricted reuse.
+
+## Host-owned platform adapters
+
+`ui-terminal-local/adapter` exports `connectHost`, `parsePath`, `formatPath` and
+control types. Register descriptors for existing platform controls, report the
+active screen/modal layer, and supply native measurement/actionability callbacks.
+These hooks cannot execute commands; use the one attached input/output stream.
+`ui-terminal-local/completion` exports `completePrefix` for a host-owned panel.
+
+Native hosts provide `createSessionId` (their platform UUID implementation).
+Actionability may return a Promise; session, mount identity and disabled state
+are rechecked after geometry resolves. Web Crypto and TextEncoder are not required
+when the UUID callback is supplied. `allowNumericIndices` is an opt-in legacy
+bridge: `[0]` parses as key `"0"`; new adapters should use stable quoted IDs.
+The package's React DOM panel does not become a native panel through this export.
+FayPOS owns its RN control/panel integration and platform acceptance checks.

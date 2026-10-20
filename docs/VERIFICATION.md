@@ -1,12 +1,12 @@
 # Local verification — 20 October 2026
 
-Version: `ui-terminal-local@0.1.0-dev.0`, private local prototype.
+Version: `ui-terminal-local@0.1.0-dev.1`, private local prototype.
 
 ## Automated evidence
 
 | Check                                                       | Result                                 |
 | ----------------------------------------------------------- | -------------------------------------- |
-| Sequential engine tests (`npm test`)                        | 28 passed, 0 failed                    |
+| Sequential engine tests (`npm test`)                        | 31 passed, 0 failed                    |
 | Browser regressions (`npm run test:browser`)                | 11 passed, 1 worker, isolated Chromium |
 | TypeScript library/demo checks (`npm run build`)            | Passed                                 |
 | Production demo bundle                                      | Built successfully                     |
@@ -45,7 +45,9 @@ message, backend database or production setting was created or changed.
 
 This is a local browser prototype, not the planned finished cross-platform beta.
 No native/Android/iOS/Windows installation tests, external agent/server transport,
-FayPOS integration, public publication or live deployment occurred. Full SSR
+public publication or live deployment occurred in this package. FayPOS now consumes
+the dev.1 archive through host-owned React Native controls and a native dock; its
+UI/Metro acceptance evidence belongs to the FayPOS repository. Full SSR
 hydration, arbitrary third-party widget compatibility and large virtualized-list
 performance are not established by these tests. See ROADMAP.md before extending
 support claims.
@@ -53,3 +55,5 @@ support claims.
 Completion update: Tab now fills a shared group prefix before listing alternatives;
 `products.j` becomes `products.journal.`. Prefix matching considers every candidate
 before limiting displayed suggestions, and ignores dots inside quoted IDs.
+
+Adapter update: 31 core tests and 11 browser flows pass, including native UUID injection, async actionability, legacy numeric paths (opt-in only), bounded detail metadata, stale native checks and malformed private input redaction. Clean installed-package checks import the adapter and completion exports without React.

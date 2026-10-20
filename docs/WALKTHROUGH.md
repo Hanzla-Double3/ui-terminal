@@ -43,3 +43,11 @@ When these behaviors change, review this guide and the corresponding tests.
 
 Completion is observed UI behavior and, where applicable, an explicit host receipt.
 This document does not automatically execute saves or destructive operations.
+
+Maintainer review (20 October 2026, platform adapter export): the DOM demo targets,
+steps and durable-save conditions are unchanged. Registration is now available to
+host-owned adapters; asynchronous geometry gets an additional stale-target check.
+The default parser still rejects numeric indices. Core regressions cover injected
+native UUIDs, operation without TextEncoder/Web Crypto, legacy opt-in parsing,
+bounded detail snapshots and scope/disabled/unmount changes during async checks.
+The demo and screenshots remain browser evidence, not Android device acceptance.

@@ -34,7 +34,10 @@ export type Command =
       method: Method;
       args: (string | number)[];
     };
-export function parsePath(source: string): string[] {
+export function parsePath(
+  source: string,
+  options: { allowNumericIndices?: boolean } = {},
+): string[] {
   if (!source || source.length > 500)
     throw new TerminalError("PARSE_ERROR", "Use a discovered control path.");
   const parts: string[] = [];
@@ -50,6 +53,9 @@ export function parsePath(source: string): string[] {
     );
   while (rest) {
     const identifier = /^\.([A-Za-z_][A-Za-z_0-9]*)/.exec(rest);
+    const index = options.allowNumericIndices
+      ? /^\[(0|[1-9][0-9]{0,4})\]/.exec(rest)
+      : null;
     const key = /^\[("(?:[^"\\\x00-\x1f]|\\.)*")\]/.exec(rest);
     if (identifier) {
       parts.push(identifier[1]!);
@@ -64,6 +70,9 @@ export function parsePath(source: string): string[] {
         );
       }
       rest = rest.slice(key[0].length);
+    } else if (index) {
+      parts.push(index[1]!);
+      rest = rest.slice(index[0].length);
     } else
       throw new TerminalError(
         "PARSE_ERROR",
@@ -95,7 +104,10 @@ export function formatPath(parts: readonly string[]) {
 export function under(path: readonly string[], prefix: readonly string[]) {
   return prefix.every((value, index) => path[index] === value);
 }
-export function parse(source: string): Command {
+export function parse(
+  source: string,
+  options: { allowNumericIndices?: boolean } = {},
+): Command {
   const line = source.trim();
   if (!line || line.length > 4096)
     throw new TerminalError(
@@ -120,11 +132,17 @@ export function parse(source: string): Command {
                 : "navigation",
         },
       };
-    return { kind: "inspect", query: { mode: "all", path: parsePath(rest) } };
+    return {
+      kind: "inspect",
+      query: { mode: "all", path: parsePath(rest, options) },
+    };
   }
   const call = /^(.*?)\.([a-z_]+)\(([\s\S]*)\)$/.exec(line);
   if (!call)
-    return { kind: "inspect", query: { mode: "all", path: parsePath(line) } };
+    return {
+      kind: "inspect",
+      query: { mode: "all", path: parsePath(line, options) },
+    };
   const method = call[2] as Method;
   if (!methods.has(method))
     throw new TerminalError(
@@ -173,7 +191,7 @@ export function parse(source: string): Command {
     );
   return {
     kind: "action",
-    path: parsePath(call[1]!),
+    path: parsePath(call[1]!, options),
     method,
     args: args as (string | number)[],
   };

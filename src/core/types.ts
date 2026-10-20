@@ -50,6 +50,7 @@ export type ControlSummary = {
   actions: string[];
   disabled: boolean;
   shared: boolean;
+  detail?: Record<string, string | number | boolean | null>;
   value?: string | number | boolean;
 };
 export type Snapshot = {
@@ -71,14 +72,19 @@ export type Control = {
   shared: boolean;
   disabled: boolean;
   secret?: boolean;
+  detail?: Record<string, string | number | boolean | null>;
   value?: string | number | boolean;
   exposeValue?: boolean;
   actions: Partial<Record<Method, (...args: (string | number)[]) => UIResult>>;
   measure(): Promise<Rect | null>;
-  actionable(): boolean;
+  actionable(): boolean | Promise<boolean>;
   reveal?(): Promise<void>;
 };
 export type RuntimeOptions = {
+  /** Supply a platform UUID implementation when Web Crypto is unavailable. */
+  createSessionId?: () => string;
+  /** Compatibility only: accept [0] as the string key "0". Stable IDs are preferred. */
+  allowNumericIndices?: boolean;
   enabled?: boolean;
   scope?: string;
   maxControls?: number;

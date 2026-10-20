@@ -54,3 +54,16 @@ Removed controls are described as unavailable-or-unmounted, not deleted records.
 No raw input, transcript, discovery or receipts are persisted by the library. The
 demo's explicit Save action stores only its sample collection, outside the engine.
 Custom output consumers receive the same sanitized events and own their data policy.
+
+## Platform registration boundary (dev.1)
+
+`/adapter` exposes registration, screen/layer reporting and pointer presentation,
+not discovery or action execution. Host-owned panels use the same `attach` stream
+as the DOM panel. `/completion` is pure prefix matching and cannot activate UI.
+Native hosts may inject `createSessionId` and asynchronous `actionable` checks.
+After those checks, stale/disabled/session changes still cancel activation.
+Optional bounded primitive `detail` metadata appears in snapshots/deltas; hosts
+must not place credentials or private field values there. Numeric bracket paths
+remain rejected by default; `allowNumericIndices` is an explicit compatibility
+option, not an identity stability guarantee. Malformed `.type(` commands redact
+the remaining text before echo/history, including non-JSON quoted input.
