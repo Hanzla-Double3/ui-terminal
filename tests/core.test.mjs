@@ -535,12 +535,13 @@ test("an async completion from an old host scope is never delivered as a new-ses
   assert.doesNotMatch(JSON.stringify(h.events), /Old private outcome/);
 });
 
-test("byte-truncated snapshots cannot silently establish an undisclosed baseline", async () => {
+test("byte-bounded pages cannot silently establish a complete baseline", async () => {
   const h = fixture({ maxOutputBytes: 1024 });
   for (let index = 0; index < 10; index++)
     h.add(`item_${index}`, { label: "🌿".repeat(100) });
   await h.input.send("ls");
-  assert.ok(h.last("output.truncated"));
+  assert.equal(h.last("discovery.snapshot").data.truncated, true);
+  assert.ok(h.last("discovery.snapshot").data.nextOffset > 0);
   await h.input.send("ls --changes");
   assert.equal(h.error(), "BASELINE_REQUIRED");
 });
@@ -649,13 +650,157 @@ test("malformed type input never echoes private single-quoted text", async () =>
 });
 
 test("read-only widgets expose displayed values and scoped deltas without gaining actions", async () => {
-  const h=fixture(),metric=h.add('reports.total',{role:'readout',label:'Total sales',actions:{},value:'USD 12.00',exposeValue:true,detail:{amount_minor:1200,currency:'USD',state:'ready',period:'2026-10-21'}});
-  h.add('reports.secret',{role:'readout',actions:{},value:'private-value',exposeValue:true,secret:true});
-  await h.input.send('ls reports');
-  const snapshot=h.last('discovery.snapshot').data;
-  assert.equal(snapshot.controls.length,1);assert.equal(snapshot.controls[0].value,'USD 12.00');assert.deepEqual(snapshot.controls[0].actions,[]);
-  metric.descriptor.value='USD 15.00';metric.descriptor.detail.amount_minor=1500;
-  await h.input.send('ls --changes');assert.equal(h.last('discovery.delta').data.changed[0].value,'USD 15.00');
-  await h.input.send('reports.total.click()');assert.equal(h.error(),'UNKNOWN_ACTION');assert.equal(h.calls.length,0);
-  h.host.layer('modal',true);await h.input.send('ls');assert.equal(h.last('discovery.snapshot').data.controls.length,0);
+  const h = fixture(),
+    metric = h.add("reports.total", {
+      role: "readout",
+      label: "Total sales",
+      actions: {},
+      value: "USD 12.00",
+      exposeValue: true,
+      detail: {
+        amount_minor: 1200,
+        currency: "USD",
+        state: "ready",
+        period: "2026-10-21",
+      },
+    });
+  h.add("reports.secret", {
+    role: "readout",
+    actions: {},
+    value: "private-value",
+    exposeValue: true,
+    secret: true,
+  });
+  await h.input.send("ls reports");
+  const snapshot = h.last("discovery.snapshot").data;
+  assert.equal(snapshot.controls.length, 1);
+  assert.equal(snapshot.controls[0].value, "USD 12.00");
+  assert.deepEqual(snapshot.controls[0].actions, []);
+  metric.descriptor.value = "USD 15.00";
+  metric.descriptor.detail.amount_minor = 1500;
+  await h.input.send("ls --changes");
+  assert.equal(h.last("discovery.delta").data.changed[0].value, "USD 15.00");
+  await h.input.send("reports.total.click()");
+  assert.equal(h.error(), "UNKNOWN_ACTION");
+  assert.equal(h.calls.length, 0);
+  h.host.layer("modal", true);
+  await h.input.send("ls");
+  assert.equal(h.last("discovery.snapshot").data.controls.length, 0);
+});
+
+test("filtered discovery, hierarchy and pages share the normal stream without private values", async () => {
+  const h = fixture({ maxControls: 10 });
+  h.add('inventory.products["a"].stock', {
+    role: "readout",
+    label: "Available stock",
+    value: 6,
+    exposeValue: true,
+    actions: {},
+    detail: { unit: "piece" },
+  });
+  h.add('inventory.products["b"].stock', {
+    role: "readout",
+    label: "Available stock",
+    value: 12,
+    exposeValue: true,
+    actions: {},
+  });
+  h.add('inventory.products["a"].edit', {
+    description: "Edit product details",
+  });
+  h.add("navigation.settings", { shared: true });
+  h.add("secret", {
+    role: "field",
+    secret: true,
+    value: "needle",
+    exposeValue: true,
+  });
+  h.add("draft", { role: "field", value: "needle", exposeValue: false });
+  await h.input.send('ls --json --role readout --find "stock"');
+  assert.equal(h.last("discovery.snapshot").data.format, "json");
+  assert.equal(h.last("discovery.snapshot").data.controls.length, 2);
+  await h.input.send('ls --find "needle"');
+  assert.equal(h.last("discovery.snapshot").data.controls.length, 0);
+  await h.input.send("ls --tree inventory.products");
+  const tree = h.last("discovery.snapshot").data;
+  assert.equal(tree.controls.length, 2);
+  assert.equal(tree.controls[0].path, "inventory.products.a");
+  assert.equal(tree.controls[0].detail.descendant_count, 2);
+  await h.input.send("ls --role readout --limit 1");
+  const page = h.last("discovery.snapshot").data;
+  assert.equal(page.matched, 2);
+  assert.equal(page.nextOffset, 1);
+  assert.equal(page.truncated, true);
+  await h.input.send("ls --changes");
+  assert.equal(h.error(), "BASELINE_REQUIRED");
+  await h.input.send("ls --role readout --limit 1 --offset 1");
+  assert.equal(h.last("discovery.snapshot").data.controls[0].value, 12);
+  await h.input.send("ls --role readout");
+  h.add('inventory.products["c"].stock', {
+    role: "readout",
+    label: "Stock",
+    value: 0,
+    exposeValue: true,
+    actions: {},
+  });
+  await h.input.send("ls --changes");
+  assert.equal(h.last("discovery.delta").data.added.length, 1);
+  h.runtime.dispose();
+});
+test("discovery options validate bounds, quoting and duplicate flags", () => {
+  for (const line of [
+    "ls --limit 0",
+    "ls --offset -1",
+    "ls --limit 10001",
+    "ls --role",
+    'ls --find "',
+    'ls --find ""',
+    "ls --role button --role readout",
+    "ls --unknown",
+    "ls a b",
+  ])
+    assert.throws(() => parse(line));
+  assert.equal(parse('ls --find "milk carton"').query.find, "milk carton");
+  assert.deepEqual(parse('ls --tree cart.items["a b"]').query.path, [
+    "cart",
+    "items",
+    "a b",
+  ]);
+});
+
+test("large discovery pages shrink to the byte budget and expose the exact next offset", async () => {
+  const h = fixture({ maxControls: 100, maxOutputBytes: 4096 });
+  for (let i = 0; i < 50; i++)
+    h.add(`report.rows["${i}"]`, {
+      role: "readout",
+      label: "Row",
+      value: "v".repeat(200),
+      exposeValue: true,
+      actions: {},
+    });
+  await h.input.send("ls --role readout");
+  const page = h.last("discovery.snapshot").data;
+  assert.ok(page.controls.length > 0 && page.controls.length < 50);
+  assert.equal(page.nextOffset, page.controls.length);
+  assert.equal(page.matched, 50);
+  await h.input.send(`ls --role readout --offset ${page.nextOffset}`);
+  assert.notEqual(
+    h.last("discovery.snapshot").data.controls[0].path,
+    page.controls[0].path,
+  );
+  h.runtime.dispose();
+});
+
+test("a single oversized widget stays explicitly truncated without a false baseline", async () => {
+  const h = fixture({ maxOutputBytes: 1024 });
+  h.add("big", {
+    detail: Object.fromEntries(
+      Array.from({ length: 32 }, (_, i) => ["key" + i, "x".repeat(500)]),
+    ),
+  });
+  await h.input.send("ls");
+  assert.ok(h.last("output.truncated"));
+  await h.input.send("ls --changes");
+  assert.equal(h.error(), "BASELINE_REQUIRED");
+  h.runtime.dispose();
 });

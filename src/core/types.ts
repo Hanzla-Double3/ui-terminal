@@ -54,12 +54,17 @@ export type ControlSummary = {
   value?: string | number | boolean;
 };
 export type Snapshot = {
+  format?: "json";
   revision: number;
   screen: string;
   dialog: boolean;
   controls: ControlSummary[];
   truncated: boolean;
   omittedNavigation: number;
+  matched?: number;
+  offset?: number;
+  limit?: number;
+  nextOffset?: number;
 };
 /** Internal adapter contract. Not a second public command-execution interface. */
 export type Control = {

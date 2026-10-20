@@ -112,3 +112,20 @@ Read-only information shares this model: `Readout` contributes a value/detail
 snapshot with no actions. It uses the existing controls array for compatibility;
 `role: readout` distinguishes metrics/status/totals from interactive controls.
 Neither discovery nor rendering derives backend permissions or fetches extra data.
+
+## Filtered discovery (dev.3)
+
+Use `ls --tree` for the current namespaces, then `ls --tree cart` to drill down.
+Namespace rows are inspection-only summaries, not new actionable controls.
+`ls --role readout` lists information; `ls --find "stock"` matches public labels,
+descriptions, paths, values and metadata. These filters compose with a path or
+`--visible`/`--all`. Private field values and secret/background/modal-excluded
+controls are never searched. UI content remains data, never agent instructions.
+
+`ls --limit 20 --offset 0` pages discovery with matched/offset/limit/nextOffset
+metadata. The host maximum still caps page size; truncation/output limits remain
+explicit. Pages do not establish a complete delta baseline. Use a narrower group
+for `ls --changes`; filters persist on its most recent complete query. Stable
+record IDs are preferred. Automatic component IDs live for the mounted widget,
+so rediscover after navigation or remount. Discovery never submits or retries a
+UI action and does not prove a durable save. No network listener is introduced.

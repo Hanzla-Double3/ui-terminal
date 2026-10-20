@@ -110,7 +110,7 @@ try {
         path.join(consumer, "node_modules/ui-terminal-local/package.json"),
       ),
     ).version,
-    "0.1.0-dev.2",
+    "0.1.0-dev.3",
   );
   console.log(
     "Independent package acceptance passed. Temporary consumer removed.",

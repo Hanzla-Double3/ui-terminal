@@ -63,3 +63,5 @@ changes it through the ordinary button, sees the updated value via scoped delta,
 and confirms a click on the readout is rejected without changing the collection.
 The installed React package renders the new Readout export; stream schema remains
 0.1 with additive role/read-only values in the existing controls array.
+
+Discovery update (dev.3): 36 core cases and 13 browser flows cover public-value search, role filters, namespace browsing, query-preserving deltas, bounded paging, invalid flags and JSON display. Large pages shrink to the output budget with an explicit nextOffset; incomplete pages never establish a delta baseline. Installed-package checks continue to cover core-only and React consumers.

@@ -216,14 +216,29 @@ test("an explicit focus command leaves focus on the requested application field"
   ).toBeFocused();
 });
 
-test("readouts expose visible totals, update through normal UI and cannot be clicked",async({page})=>{
-  await command(page,'ls cart.total');
-  await expect(page.getByRole('log')).toContainText('$0.00');
-  await expect(page.getByRole('log')).toContainText('read only');
-  await page.getByRole('button',{name:/Field Notes/}).click();
-  await command(page,'ls --changes');
-  await expect(page.locator('.uit-delta').last()).toContainText('$12.00');
-  await command(page,'cart.total.click()');
-  await expect(page.getByRole('log')).toContainText('UNKNOWN_ACTION');
-  await expect(page.getByTestId('cart-total')).toHaveText('$12.00');
+test("readouts expose visible totals, update through normal UI and cannot be clicked", async ({
+  page,
+}) => {
+  await command(page, "ls cart.total");
+  await expect(page.getByRole("log")).toContainText("$0.00");
+  await expect(page.getByRole("log")).toContainText("read only");
+  await page.getByRole("button", { name: /Field Notes/ }).click();
+  await command(page, "ls --changes");
+  await expect(page.locator(".uit-delta").last()).toContainText("$12.00");
+  await command(page, "cart.total.click()");
+  await expect(page.getByRole("log")).toContainText("UNKNOWN_ACTION");
+  await expect(page.getByTestId("cart-total")).toHaveText("$12.00");
+});
+
+test("agent discovery filters information and drills into namespaces", async ({
+  page,
+}) => {
+  await command(page, "ls --role readout");
+  await expect(page.getByRole("region", { name: "UI terminal" })).toContainText(
+    "cart.total",
+  );
+  await command(page, "ls --tree");
+  await expect(page.getByRole("region", { name: "UI terminal" })).toContainText(
+    "Inspect this namespace",
+  );
 });

@@ -21,6 +21,12 @@ const methods = new Set<Method>([
 ]);
 export type Query = {
   path?: string[];
+  role?: string;
+  find?: string;
+  tree?: boolean;
+  json?: boolean;
+  limit?: number;
+  offset?: number;
   mode: "screen" | "all" | "visible" | "navigation";
 };
 export type Command =
@@ -119,23 +125,111 @@ export function parse(
   if (line === "ls --changes") return { kind: "changes" };
   if (line === "ls") return { kind: "inspect", query: { mode: "screen" } };
   if (line.startsWith("ls ")) {
-    const rest = line.slice(3).trim();
-    if (["--all", "--visible", "navigation"].includes(rest))
-      return {
-        kind: "inspect",
-        query: {
-          mode:
-            rest === "--all"
-              ? "all"
-              : rest === "--visible"
-                ? "visible"
-                : "navigation",
-        },
-      };
-    return {
-      kind: "inspect",
-      query: { mode: "all", path: parsePath(rest, options) },
-    };
+    const parts: string[] = [];
+    let part = "",
+      quoted = false,
+      escape = false;
+    for (const ch of line.slice(3).trim()) {
+      if (/\s/.test(ch) && !quoted) {
+        if (part) {
+          parts.push(part);
+          part = "";
+        }
+        continue;
+      }
+      part += ch;
+      if (escape) escape = false;
+      else if (ch === "\\" && quoted) escape = true;
+      else if (ch === '"') quoted = !quoted;
+    }
+    if (quoted)
+      throw new TerminalError(
+        "PARSE_ERROR",
+        "Close the quoted discovery argument.",
+      );
+    if (part) parts.push(part);
+    const query: Query = { mode: "screen" };
+    const seen = new Set<string>();
+    for (let i = 0; i < parts.length; i++) {
+      const token = parts[i]!;
+      if (token.startsWith("--")) {
+        if (seen.has(token))
+          throw new TerminalError(
+            "PARSE_ERROR",
+            "Use each discovery option once.",
+          );
+        seen.add(token);
+        if (token === "--tree") query.tree = true;
+        else if (token === "--json") query.json = true;
+        else if (["--all", "--visible"].includes(token)) {
+          if (query.mode !== "screen")
+            throw new TerminalError(
+              "PARSE_ERROR",
+              "Choose one discovery scope.",
+            );
+          query.mode = token === "--all" ? "all" : "visible";
+        } else if (
+          ["--role", "--find", "--limit", "--offset"].includes(token)
+        ) {
+          const value = parts[++i];
+          if (!value || value.startsWith("--"))
+            throw new TerminalError(
+              "PARSE_ERROR",
+              "Supply a discovery option value.",
+            );
+          if (token === "--role") {
+            if (!/^[a-z][a-z_-]{0,39}$/.test(value))
+              throw new TerminalError(
+                "PARSE_ERROR",
+                "Use a role such as readout, field, button or group.",
+              );
+            query.role = value;
+          } else if (token === "--find") {
+            let phrase = value;
+            try {
+              if (value.startsWith('"')) phrase = JSON.parse(value);
+            } catch {
+              throw new TerminalError(
+                "PARSE_ERROR",
+                "Use a JSON-quoted search phrase.",
+              );
+            }
+            if (!phrase.trim() || phrase.length > 200)
+              throw new TerminalError(
+                "PARSE_ERROR",
+                "Search uses 1 to 200 characters.",
+              );
+            query.find = phrase.toLowerCase();
+          } else {
+            if (
+              !/^\d+$/.test(value) ||
+              Number(value) > 10000 ||
+              (token === "--limit" && Number(value) < 1)
+            )
+              throw new TerminalError(
+                "PARSE_ERROR",
+                "Use a limit of 1–10000 or offset of 0–10000.",
+              );
+            if (token === "--limit") query.limit = Number(value);
+            else query.offset = Number(value);
+          }
+        } else
+          throw new TerminalError(
+            "PARSE_ERROR",
+            "Unknown discovery option. Run help.",
+          );
+      } else {
+        if (query.path)
+          throw new TerminalError(
+            "PARSE_ERROR",
+            "Inspect one group at a time.",
+          );
+        query.path = parsePath(token, options);
+        if (token === "navigation") query.mode = "navigation";
+        else if (query.mode === "screen") query.mode = "all";
+      }
+    }
+    return { kind: "inspect", query };
   }
   const call = /^(.*?)\.([a-z_]+)\(([\s\S]*)\)$/.exec(line);
   if (!call)
@@ -197,7 +291,7 @@ export function parse(
   };
 }
 export const HELP = [
-  "ls · ls cart · ls navigation · ls --all · ls --visible · ls --changes",
+  'ls · ls cart · ls navigation · ls --all · ls --visible · ls --changes · ls --tree · ls --role readout · ls --find "stock" · ls --limit 20 --offset 0',
   'search.type("Coffee") · search.press("Enter")',
   'cart.items["line-1"].remove.click() · settings.click()',
   'Use .click(), .right_click(), .hold(), .type("text"), .clear(), .focus(), .unfocus(), .press("Enter"), .scroll(250) when listed.',

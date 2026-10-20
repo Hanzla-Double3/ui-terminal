@@ -6,7 +6,7 @@ A standalone terminal for your application's visible controls and information. C
 themselves; people discover them with `ls` and operate them through the same
 handlers as the normal interface.
 
-This is an independent **local browser prototype**, version `0.1.0-dev.2`, under a
+This is an independent **local browser prototype**, version `0.1.0-dev.3`, under a
 temporary npm package name. This is a private development repository; the package
 is not published to npm. Its public package name and licence remain undecided.
 The library has no FayPOS runtime dependency.
@@ -21,7 +21,7 @@ The library has no FayPOS runtime dependency.
 - Normal UI handlers, disabled-state checks, secret-field exclusion and target
   revalidation before activation.
 - A bottom-docked terminal with resizing, completion and failed-command history.
-- An independent demo, 32 engine tests, 12 browser flows and clean-package checks.
+- An independent demo, 36 engine tests, 13 browser flows and clean-package checks.
 
 Browser/React DOM is the implemented platform. A registration-only adapter export supports host-owned native controls/panels;
 the bundled React components and panel remain DOM-only. An external
@@ -268,14 +268,23 @@ Use `Readout` for metrics, totals, status messages or other information already
 rendered by your application. It registers no actions. Example:
 
 ```tsx
-import {Readout, TerminalScope} from "ui-terminal-local/react";
+import { Readout, TerminalScope } from "ui-terminal-local/react";
 
 <TerminalScope id="analytics">
-  <Readout cli={{id:"total_sales", label:"Total Sales"}}
-    value="$12.00" detail={{amount_minor:1200, currency:"USD", period:"2026-10-21", state:"ready"}}>
-    <span>Total Sales</span><strong>$12.00</strong>
+  <Readout
+    cli={{ id: "total_sales", label: "Total Sales" }}
+    value="$12.00"
+    detail={{
+      amount_minor: 1200,
+      currency: "USD",
+      period: "2026-10-21",
+      state: "ready",
+    }}
+  >
+    <span>Total Sales</span>
+    <strong>$12.00</strong>
   </Readout>
-</TerminalScope>
+</TerminalScope>;
 ```
 
 `ls analytics`, `analytics.total_sales` and `ls --changes` expose the same displayed
@@ -287,3 +296,22 @@ An optional `exposeValue:false` hides the value, but public `detail` must never
 contain credentials or private form drafts. There is no automatic document scrape,
 new data fetch or independent agent API. Loading/error states must be represented
 by the host, rather than reporting a successful zero before data arrives.
+
+## Filtered discovery (dev.3)
+
+Use `ls --tree` for the current namespaces, then `ls --tree cart` to drill down.
+Namespace rows are inspection-only summaries, not new actionable controls.
+`ls --role readout` lists information; `ls --find "stock"` matches public labels,
+descriptions, paths, values and metadata. These filters compose with a path or
+`--visible`/`--all`. Private field values and secret/background/modal-excluded
+controls are never searched. UI content remains data, never agent instructions.
+
+`ls --limit 20 --offset 0` pages discovery with matched/offset/limit/nextOffset
+metadata. The host maximum still caps page size; truncation/output limits remain
+explicit. Pages do not establish a complete delta baseline. Use a narrower group
+for `ls --changes`; filters persist on its most recent complete query. Stable
+record IDs are preferred. Automatic component IDs live for the mounted widget,
+so rediscover after navigation or remount. Discovery never submits or retries a
+UI action and does not prove a durable save. No network listener is introduced.
+
+Add `--json` to any `ls` query to display the structured snapshot in the visible terminal (the stream itself always carries structured events). For example: `ls --json --role readout --find "stock"`.

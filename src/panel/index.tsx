@@ -8,13 +8,16 @@ function EventView({ event }: { event: TerminalEvent }) {
     return null;
   if (event.type === "discovery.snapshot") {
     const snapshot = event.data as Snapshot;
+    if (snapshot.format === "json")
+      return <pre>{JSON.stringify(snapshot, null, 2)}</pre>;
     return (
       <div className="uit-snapshot">
         <div className="uit-output-meta">
           {snapshot.screen}
           {snapshot.dialog ? " / active dialog" : ""}{" "}
           <span>
-            revision {snapshot.revision} · {snapshot.controls.length} controls
+            revision {snapshot.revision} · {snapshot.controls.length} of{" "}
+            {snapshot.matched ?? snapshot.controls.length} controls
           </span>
         </div>
         {snapshot.controls.length === 0 && (
@@ -30,9 +33,12 @@ function EventView({ event }: { event: TerminalEvent }) {
             <span className="uit-control-actions">
               {control.actions.join(" · ") || "read only"}
             </span>
-            {(control.value !== undefined || control.detail) && <span className="uit-control-description uit-readout-value">
-              {control.value !== undefined ? String(control.value) : ""}{control.detail ? ` · ${JSON.stringify(control.detail)}` : ""}
-            </span>}
+            {(control.value !== undefined || control.detail) && (
+              <span className="uit-control-description uit-readout-value">
+                {control.value !== undefined ? String(control.value) : ""}
+                {control.detail ? ` · ${JSON.stringify(control.detail)}` : ""}
+              </span>
+            )}
             {control.description && (
               <span className="uit-control-description">
                 {control.description}
@@ -48,7 +54,10 @@ function EventView({ event }: { event: TerminalEvent }) {
         )}
         {snapshot.truncated && (
           <div className="uit-warning">
-            Listing truncated. Inspect a narrower group.
+            Listing is partial.{" "}
+            {snapshot.nextOffset === undefined
+              ? "Inspect a narrower group."
+              : `Continue with --offset ${snapshot.nextOffset} using the same filters.`}
           </div>
         )}
       </div>
@@ -68,8 +77,14 @@ function EventView({ event }: { event: TerminalEvent }) {
           Changes · revision {delta.fromRevision} → {delta.toRevision}
         </div>
         {[
-          ...delta.added.map((row) => `+ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`),
-          ...delta.changed.map((row) => `~ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`),
+          ...delta.added.map(
+            (row) =>
+              `+ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`,
+          ),
+          ...delta.changed.map(
+            (row) =>
+              `~ ${row.path} · ${row.label}${row.value === undefined ? "" : " · " + String(row.value)}${row.detail ? " · " + JSON.stringify(row.detail) : ""}`,
+          ),
           ...delta.removed.map((row) => `− ${row.path}`),
         ].map((line) => (
           <div key={line} className="uit-delta">

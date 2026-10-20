@@ -1,4 +1,11 @@
-import { formatPath, HELP, parse, TerminalError, under } from "./language.js";
+import {
+  formatPath,
+  HELP,
+  parse,
+  parsePath,
+  TerminalError,
+  under,
+} from "./language.js";
 import type { Command, Query } from "./language.js";
 import type {
   ActionOutcome,
@@ -349,16 +356,87 @@ export class TerminalRuntime {
         "NOT_FOUND",
         "No current control in that group. Run ls.",
       );
-    const controls = rows
+    let controls = rows
       .map((row) => this.summary(row.descriptor))
+      .filter(
+        (c) =>
+          (!query.role || c.role === query.role) &&
+          (!query.find ||
+            [
+              c.path,
+              c.label,
+              c.description ?? "",
+              c.value === undefined ? "" : String(c.value),
+              JSON.stringify(c.detail ?? {}),
+            ]
+              .join(" ")
+              .toLowerCase()
+              .includes(query.find)),
+      )
       .sort((a, b) => a.path.localeCompare(b.path));
+    if (query.tree) {
+      const depth = (query.path?.length ?? 0) + 1;
+      const groups = new Map<
+        string,
+        { rows: ControlSummary[]; exact?: ControlSummary }
+      >();
+      for (const c of controls) {
+        const parts = parsePath(c.path, {
+          allowNumericIndices: this.options.allowNumericIndices,
+        });
+        const key = formatPath(parts.slice(0, depth));
+        const group = groups.get(key) ?? { rows: [] };
+        group.rows.push(c);
+        if (parts.length <= depth) group.exact = c;
+        groups.set(key, group);
+      }
+      controls = [...groups].map(([path, group]) =>
+        group.rows.length === 1 && group.exact
+          ? group.exact
+          : {
+              path,
+              role: "group",
+              label: group.exact?.label ?? path,
+              actions: [],
+              disabled: false,
+              shared: group.rows.every((c) => c.shared),
+              description: "Inspect this namespace to discover its contents.",
+              detail: {
+                descendant_count: group.rows.length,
+                actionable_count: group.rows.filter((c) => c.actions.length > 0)
+                  .length,
+                readout_count: group.rows.filter((c) => c.role === "readout")
+                  .length,
+              },
+            },
+      );
+    }
+    const offset = query.offset ?? 0,
+      limit = Math.min(
+        query.limit ?? this.options.maxControls,
+        this.options.maxControls,
+      );
+    const selected = controls.slice(offset, offset + limit);
+    // Leave room for the event envelope; oversized single widgets still produce the normal explicit truncation error.
+    while (
+      selected.length > 1 &&
+      utf8Length(JSON.stringify(selected)) + 768 > this.options.maxOutputBytes
+    )
+      selected.pop();
     return {
+      ...(query.json ? { format: "json" as const } : {}),
       revision: this.revision,
       screen: this.currentScreen,
       dialog: this.layers.length > 0,
-      controls: controls.slice(0, this.options.maxControls),
-      truncated: controls.length > this.options.maxControls,
+      controls: selected,
+      truncated: offset > 0 || controls.length > selected.length,
       omittedNavigation,
+      matched: controls.length,
+      offset,
+      limit,
+      ...(offset + selected.length < controls.length
+        ? { nextOffset: offset + selected.length }
+        : {}),
     };
   }
   private async perform(

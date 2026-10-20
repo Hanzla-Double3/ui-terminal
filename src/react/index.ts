@@ -7,4 +7,9 @@ export {
   Dialog,
   useTerminalControl,
 } from "./controls.js";
-export type { CliMetadata, ButtonProps, FieldProps, ReadoutProps } from "./controls.js";
+export type {
+  CliMetadata,
+  ButtonProps,
+  FieldProps,
+  ReadoutProps,
+} from "./controls.js";
