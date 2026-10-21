@@ -595,7 +595,7 @@ class LocalBridge {
             if (!id(request.id))
               throw fail("INVALID_REQUEST", "A bounded request ID is required");
             if (request.op === "hello") {
-              if (state.challenge || !equal(request.gate, this.gate))
+              if (state.proved || state.challenge || !equal(request.gate, this.gate))
                 throw fail("UNAUTHORIZED", "Invalid local endpoint capability");
               Object.assign(connection, publicIdentity(request.publicKey), {
                 label:

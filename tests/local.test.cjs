@@ -278,3 +278,12 @@ test("one-shot stdin EOF drains its accepted command result before exiting", () 
     await new Promise((r) => child.once("exit", r));
     assert.ok(text.includes('"type":"result","id":"once"'));
   }));
+
+test('a proved connection cannot replace its identity with another public key',()=>fixture(async h=>{
+ const {identity}=require('../transport/local.cjs'),{sign}=require('node:crypto');await h.bridge.configure({mode:'trusted',anyAccess:'read'});
+ const a=await identity(path.join(h.root,'raw-a','key.json')),b=await identity(path.join(h.root,'raw-b','key.json')),endpoint=JSON.parse(await fs.readFile(h.bridge.endpointFile,'utf8'));
+ const socket=net.connect(h.bridge.address);let buffer='',resolve;socket.on('error',()=>{});socket.on('data',chunk=>{buffer+=chunk;for(let n;(n=buffer.indexOf('\n'))>=0;){const line=buffer.slice(0,n);buffer=buffer.slice(n+1);resolve?.(JSON.parse(line));}});await new Promise(r=>socket.once('connect',r));
+ const request=value=>new Promise(r=>{resolve=r;socket.write(JSON.stringify(value)+'\n');});
+ const challenge=await request({id:'hello',op:'hello',gate:endpoint.gate,publicKey:a.publicKey});const proved=await request({id:'proof',op:'authenticate',signature:sign(null,Buffer.from(challenge.challenge),a.privateKey).toString('base64url')});assert.equal(proved.status,'pairing_required');
+ const closed=new Promise(r=>socket.once('close',r));socket.write(JSON.stringify({id:'replace',op:'hello',gate:endpoint.gate,publicKey:b.publicKey})+'\n');await closed;assert.equal(h.bridge.state().active,null);assert.equal(h.bridge.state().pending.length,0);
+}));
