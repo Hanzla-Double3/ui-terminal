@@ -175,8 +175,7 @@ connection.detach();
 
 That example has no registered application controls; `help` needs none. A second
 attachment is rejected. The visible panel and engine tests use this same boundary.
-`TerminalProvider` currently installs the visible attachment automatically; external
-transport ownership/handoff is intentionally later work.
+`TerminalProvider` installs the visible attachment automatically. Native hosts may broker exclusive local external ownership through the same input/output pair; see docs/LOCAL_CONNECTIONS.md.
 
 Output events are ordered, schema-versioned and sanitized before delivery. Session
 history and transcript are bounded memory; they are not persisted or sent anywhere.
@@ -186,8 +185,7 @@ Output failure revokes the attachment and never retries a dispatched mutation.
 
 - Browser/React DOM implemented. The engine is portable, but React Native/Android,
   native panel, Electron packaging and iOS acceptance are **not implemented/tested**.
-- No external listening server, agent connector, test-client transport, MCP/WebMCP
-  bridge or multiple input drivers. The future transport will relay the same lines
+- No remote network server, MCP/WebMCP bridge or simultaneous input drivers. The optional local Node connector relays the same lines
   and output events; it will not introduce per-feature execution APIs.
 - List discovery covers mounted controls. There is no virtual-list data-source
   adapter, infinite-scroll pagination, arbitrary shadow-DOM or cross-frame control.
@@ -315,3 +313,11 @@ so rediscover after navigation or remount. Discovery never submits or retries a
 UI action and does not prove a durable save. No network listener is introduced.
 
 Add `--json` to any `ls` query to display the structured snapshot in the visible terminal (the stream itself always carries structured events). For example: `ls --json --role readout --find "stock"`.
+
+## Local program connections (experimental)
+
+Optional Node-only OS-pipe and stdio adapters now relay the same terminal stream.
+Hosts choose Off, session pairing, remembered public-key clients or any-local
+access, with read-only/control grants and exclusive ownership. See
+[local connection setup and trust boundaries](docs/LOCAL_CONNECTIONS.md).
+No network listener or new feature-specific executor is added.

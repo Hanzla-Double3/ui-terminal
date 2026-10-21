@@ -78,3 +78,12 @@ so rediscover after navigation or remount. Discovery never submits or retries a
 UI action and does not prove a durable save. No network listener is introduced.
 
 Add `--json` to any `ls` query to display the structured snapshot in the visible terminal (the stream itself always carries structured events). For example: `ls --json --role readout --find "stock"`.
+
+## Optional local connector
+
+Use a host that implements the [local connection contract](LOCAL_CONNECTIONS.md).
+Verify Off first; approve a session-only read grant, confirm an action is rejected,
+then disconnect. With remembered mode approve a control grant, restart both
+processes and verify reconnection without another code. Forget the client and
+confirm it needs pairing again. Verify any-local mode explicitly, then Take control
+and disable it. No demo automatically grants access or submits a business action.

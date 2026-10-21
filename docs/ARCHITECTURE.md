@@ -129,3 +129,12 @@ for `ls --changes`; filters persist on its most recent complete query. Stable
 record IDs are preferred. Automatic component IDs live for the mounted widget,
 so rediscover after navigation or remount. Discovery never submits or retries a
 UI action and does not prove a durable save. No network listener is introduced.
+
+## Local transport implementation (dev.4)
+
+The Node-only export now implements the local OS-pipe/stdio attachment previously
+listed as future work. It forwards existing command lines and sanitized events
+with bounded ingress/output, signed client identities, per-workspace policy and
+exclusive controller ownership. Host access mode/owner changes invalidate pending
+actions in the interpreter. No remote network listener or domain executor exists.
+See [local connections](LOCAL_CONNECTIONS.md).

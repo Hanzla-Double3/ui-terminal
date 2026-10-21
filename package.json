@@ -1,6 +1,6 @@
 {
   "name": "ui-terminal-local",
-  "version": "0.1.0-dev.3",
+  "version": "0.1.0-dev.4",
   "private": true,
   "type": "module",
   "description": "A local, embeddable terminal for operating visible application controls.",
@@ -32,13 +32,16 @@
     "./completion": {
       "types": "./dist/panel/completion.d.ts",
       "import": "./dist/panel/completion.js"
-    }
+    },
+    "./node": "./transport/local.cjs",
+    "./connector": "./transport/connect.cjs"
   },
   "files": [
     "dist",
     "src/panel/panel.css",
     "README.md",
-    "docs"
+    "docs",
+    "transport"
   ],
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 18120 --strictPort",
@@ -73,5 +76,8 @@
     "react-dom": "19.1.0",
     "typescript": "5.9.2",
     "vite": "8.3.4"
+  },
+  "bin": {
+    "ui-terminal-connect": "transport/connect.cjs"
   }
 }

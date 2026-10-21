@@ -55,7 +55,7 @@ const tsc = "node_modules/typescript/bin/tsc";
 run([tsc, "-p", "tsconfig.json"]);
 const task = process.argv[2];
 if (task === "test")
-  run(["--test", "--test-concurrency=1", "tests/core.test.mjs"]);
+  run(["--test", "--test-concurrency=1", "tests/core.test.mjs", "tests/local.test.cjs"]);
 else if (task === "browser")
   run(["node_modules/@playwright/test/cli.js", "test"]);
 else if (task === "package") run(["scripts/package-smoke.mjs"]);

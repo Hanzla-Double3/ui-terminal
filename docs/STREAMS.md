@@ -5,7 +5,7 @@ adapter with `send(line)` and one subscriber. `terminal.attach({input, output})`
 claims one input/output pair until detach. A second owner gets
 `INPUT_ALREADY_ATTACHED`. The visible provider installs its own attachment.
 
-The core imports neither React nor Node APIs. The package has no listening socket.
+The core imports neither React nor Node APIs. The portable core has no listening socket; the optional Node export listens only on a local OS pipe.
 Future clients must relay this terminal protocol, not reach into the UI registry.
 
 Each output event has a schema version, opaque session ID, increasing sequence,
@@ -96,3 +96,10 @@ so rediscover after navigation or remount. Discovery never submits or retries a
 UI action and does not prove a durable save. No network listener is introduced.
 
 Add `--json` to any `ls` query to display the structured snapshot in the visible terminal (the stream itself always carries structured events). For example: `ls --json --role readout --find "stock"`.
+
+## Local attachment (dev.4)
+
+The optional Node-only local bridge/stdio connector wraps these same streams.
+Host access(read/control/blocked, owner) invalidates pending commands when control
+changes and enforces read-only before any UI action. Hosts implement the approval
+and ownership UI; no second action executor is introduced. See [local connections](LOCAL_CONNECTIONS.md).

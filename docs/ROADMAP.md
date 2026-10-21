@@ -48,3 +48,8 @@ for `ls --changes`; filters persist on its most recent complete query. Stable
 record IDs are preferred. Automatic component IDs live for the mounted widget,
 so rediscover after navigation or remount. Discovery never submits or retries a
 UI action and does not prove a durable save. No network listener is introduced.
+
+Local OS-pipe/stdio attachments are now implemented experimentally (dev.4), with
+per-workspace pairing/trust policies and bounded exclusive ownership. Remote
+network access and browser/Android transport adapters remain deferred. See
+[local connections](LOCAL_CONNECTIONS.md) for the current acceptance boundary.

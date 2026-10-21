@@ -64,6 +64,8 @@ try {
     import {createTerminal, createInput} from 'ui-terminal-local';
     import {connectHost, parsePath} from 'ui-terminal-local/adapter';
     import {completePrefix} from 'ui-terminal-local/completion';
+    import local from 'ui-terminal-local/node';
+    assert.equal(typeof local.LocalBridge, 'function');
     assert.equal(typeof connectHost, 'function');
     assert.deepEqual(parsePath('cart.items[0]', {allowNumericIndices:true}), ['cart','items','0']);
     assert.equal(completePrefix('cart.i', ['cart.items.remove','cart.items.add']).value, 'cart.items.');
@@ -110,7 +112,7 @@ try {
         path.join(consumer, "node_modules/ui-terminal-local/package.json"),
       ),
     ).version,
-    "0.1.0-dev.3",
+    "0.1.0-dev.4",
   );
   console.log(
     "Independent package acceptance passed. Temporary consumer removed.",

@@ -52,12 +52,15 @@ const hosts = new WeakMap<
     layer(id: string, open: boolean): void;
     screen(name: string): void;
     point(handler: RuntimeOptions["point"]): void;
+    access(mode: "read" | "control" | "blocked", owner?: string): void;
   }
 >();
 export function getHost(runtime: TerminalRuntime) {
   return hosts.get(runtime)!;
 }
 export class TerminalRuntime {
+  private accessMode: "read" | "control" | "blocked" = "control";
+  private accessOwner = "human";
   private entries = new Map<symbol, Entry>();
   private layers: string[] = [];
   private attachment?: Attachment;
@@ -126,6 +129,16 @@ export class TerminalRuntime {
         if (this.currentScreen !== name) {
           this.currentScreen = name;
           this.epoch++;
+        }
+      },
+      access: (mode, owner = "human") => {
+        if (!["read", "control", "blocked"].includes(mode))
+          throw new TerminalError("INVALID_ARGUMENT", "Invalid access mode");
+        if (mode !== this.accessMode || owner !== this.accessOwner) {
+          this.accessMode = mode;
+          this.accessOwner = owner;
+          this.epoch++;
+          if (this.attachment) this.attachment.baseline = undefined;
         }
       },
       point: (handler) => {
@@ -614,6 +627,14 @@ export class TerminalRuntime {
       const epoch = this.epoch;
       if (parseError) throw parseError;
       if (!command) throw new TerminalError("PARSE_ERROR", "Invalid command.");
+      if (
+        this.accessMode === "blocked" ||
+        (this.accessMode === "read" && command.kind === "action")
+      )
+        throw new TerminalError(
+          "ACCESS_DENIED",
+          "This connection is not allowed to perform UI actions.",
+        );
       if (command.kind === "help")
         await this.emit(attachment, { type: "help", commandId, message: HELP });
       else if (command.kind === "clear")

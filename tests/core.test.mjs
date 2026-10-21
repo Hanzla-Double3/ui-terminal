@@ -804,3 +804,36 @@ test("a single oversized widget stays explicitly truncated without a false basel
   assert.equal(h.error(), "BASELINE_REQUIRED");
   h.runtime.dispose();
 });
+
+test("host read-only access refuses every action and ownership changes cancel pending pointers", async () => {
+  const terminal = createTerminal({ enabled: true }),
+    input = createInput(),
+    events = [];
+  terminal.attach({ input, output: { write: (e) => events.push(e) } });
+  const host = getHost(terminal);
+  let calls = 0;
+  host.register(() => ({
+    path: ["save"],
+    label: "Save",
+    role: "button",
+    active: true,
+    layer: "root",
+    disabled: false,
+    actions: { click: () => calls++ },
+    measure: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+    actionable: () => true,
+  }));
+  host.access("read", "agent");
+  await input.send("save.click()");
+  assert.equal(calls, 0);
+  assert.ok(events.some((e) => e.code === "ACCESS_DENIED"));
+  await input.send("ls");
+  assert.ok(events.some((e) => e.type === "discovery.snapshot"));
+  host.access("control", "agent");
+  host.point(async () => {
+    host.access("control", "human");
+  });
+  await input.send("save.click()");
+  assert.equal(calls, 0);
+  terminal.dispose();
+});

@@ -7,7 +7,7 @@ private until its owner chooses its public name and licence and requests publica
 All execution enters through terminal input and leaves through terminal output.
 Platform controls register existing UI interactions. Do not introduce a parallel
 agent/testing action API. The initial visible terminal owns one input/output pair;
-external transports and multiple controllers are separate future scope.
+The authorized local stdio/OS-pipe transport relays this same stream with exclusive controller ownership. Remote network transports remain future scope.
 
 Review README.md, docs/STREAMS.md and docs/WALKTHROUGH.md when behavior changes.
 Update the command examples, limitations, walkthrough expectations and appropriate
