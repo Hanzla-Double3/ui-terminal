@@ -256,3 +256,25 @@ test("corrupt saved grants fail closed without replacing the file", async () => 
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test("one-shot stdin EOF drains its accepted command result before exiting", () =>
+  fixture(async (h) => {
+    await h.bridge.configure({ mode: "any", anyAccess: "read" });
+    const child = spawn(
+      process.execPath,
+      [
+        path.resolve(__dirname, "../transport/connect.cjs"),
+        "--endpoint",
+        h.bridge.endpointFile,
+        "--identity",
+        path.join(h.root, "oneshot", "identity.json"),
+      ],
+      { stdio: ["pipe", "pipe", "pipe"] },
+    );
+    let text = "";
+    child.stdout.on("data", (b) => (text += b));
+    child.stderr.resume();
+    child.stdin.end(JSON.stringify({ id: "once", command: "help" }) + "\n");
+    await new Promise((r) => child.once("exit", r));
+    assert.ok(text.includes('"type":"result","id":"once"'));
+  }));

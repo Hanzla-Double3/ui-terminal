@@ -39,6 +39,7 @@ function runConnector(
   let client,
     buffer = Buffer.alloc(0),
     busy = false,
+    ended = false,
     stopped = false;
   function output(message) {
     if (stopped) return;
@@ -53,7 +54,8 @@ function runConnector(
     stopped = true;
     client?.close();
     process.stdin.pause();
-    onExit(code);
+    if (process.stdout.destroyed) onExit(code);
+    else process.stdout.write("", () => onExit(code));
   }
   process.stdout.on("error", () => stop(1));
   process.stdin.on("error", () => stop(1));
@@ -129,6 +131,7 @@ function runConnector(
             output({ type: "error", id: input.id, code: "CONNECTION_FAILED" });
           } finally {
             busy = false;
+            if (ended) stop();
           }
         })();
       }
@@ -139,7 +142,8 @@ function runConnector(
     });
     process.stdin.once("end", () => {
       if (buffer.length) output({ type: "error", code: "INCOMPLETE_FRAME" });
-      stop();
+      ended = true;
+      if (!busy) stop();
     });
     process.stdin.resume();
   })().catch(() => {
