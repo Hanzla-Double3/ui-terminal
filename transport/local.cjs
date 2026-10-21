@@ -175,12 +175,14 @@ class LocalBridge {
     onState = () => {},
     onRevoke = () => {},
     now = Date.now,
+    available = () => true,
   }) {
     this.directory = directory;
     this.onCommand = onCommand;
     this.onState = onState;
     this.onRevoke = onRevoke;
     this.now = now;
+    this.available = available;
     this.context = null;
     this.policies = {};
     this.connections = new Map();
@@ -355,12 +357,14 @@ class LocalBridge {
     }
   }
   takeControl() {
-    this.requireManager();
+    if (!this.ready()) throw fail("LOCKED", "Sign in first");
     this.disconnect();
     this.notify();
     return this.state();
   }
   claim(connection, access) {
+    if (!this.available())
+      throw fail("BUSY", "The host is finishing a command");
     if (!this.ready())
       throw fail("LOCKED", "Sign in and enable the terminal first");
     if (this.active) throw fail("BUSY", "Another controller is connected");

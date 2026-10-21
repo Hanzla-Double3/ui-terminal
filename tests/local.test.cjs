@@ -224,3 +224,35 @@ test("stdio child connector emits structured events and survives separate invoca
     child.stdin.end();
     await new Promise((r) => child.once("exit", r));
   }));
+
+test("Take control is available to a signed-in operator; busy human work prevents claims", () =>
+  fixture(async (h) => {
+    await h.bridge.configure({ mode: "any", anyAccess: "control" });
+    h.bridge.available = () => false;
+    let c = await h.client();
+    assert.equal(c.initial.code, "BUSY");
+    c.close();
+    await tick();
+    h.bridge.available = () => true;
+    c = await h.client();
+    assert.equal(c.initial.status, "connected");
+    h.bridge.context.manage = false;
+    h.bridge.takeControl();
+    await tick();
+    assert.equal((await c.command("help", "lost")).code, "DISCONNECTED");
+  }));
+test("corrupt saved grants fail closed without replacing the file", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "uit-corrupt-"));
+  await fs.chmod(root, 0o700);
+  const file = path.join(root, "access.json");
+  await fs.writeFile(file, "broken", { mode: 0o600 });
+  try {
+    await assert.rejects(
+      new LocalBridge({ directory: root, onCommand() {} }).start(),
+      /could not be read/,
+    );
+    assert.equal(await fs.readFile(file, "utf8"), "broken");
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
